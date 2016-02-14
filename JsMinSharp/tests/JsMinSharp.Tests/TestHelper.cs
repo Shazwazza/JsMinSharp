@@ -12,7 +12,7 @@ namespace JsMinSharp.Tests
             var input = DoMinify(jsmin, inputFile);
             var expected = File.ReadAllText(expectedFile.FullName);
 
-            Assert.Equal("\n" + expected, input);
+            Assert.Equal(expected, input);
         }
 
         public static string DoMinify(JsMin minifier, string input)

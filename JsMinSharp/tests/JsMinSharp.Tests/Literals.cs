@@ -8,8 +8,18 @@ namespace JsMinSharp.Tests
         [Fact]
         public void ArrayLiteral()
         {
-            var input = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Input", "Literals", "ArrayLiteral.js"));
-            var expected = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Expected", "Literals", "ArrayLiteral.js"));
+            var fileName = "ArrayLiteral.js";
+            var input = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Input", "Literals", fileName));
+            var expected = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Expected", "Literals", fileName));
+            TestHelper.AssertFileMatch(input, expected);
+        }
+
+        [Fact]
+        public void Strings()
+        {
+            var fileName = "Strings.js";
+            var input = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Input", "Literals", fileName));
+            var expected = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Expected", "Literals", fileName));
             TestHelper.AssertFileMatch(input, expected);
         }
     }

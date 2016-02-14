@@ -53,7 +53,7 @@ namespace JsMinSharp
         int _theB;
         int _theLookahead = Eof;
         static int _theX = Eof;
-        static int _theY = Eof;       
+        static int _theY = Eof;
 
         public string Minify(TextReader reader)
         {
@@ -90,24 +90,29 @@ namespace JsMinSharp
                         Action(isAlphanum(_theB) ? 1 : 2);
                         break;
                     case '\n':
-                        switch (_theB)
-                        {
-                            case '{':
-                            case '[':
-                            case '(':
-                            case '+':
-                            case '-':
-                            case '!':
-                            case '~':
-                                Action(1);
-                                break;
-                            case ' ':
-                                Action(3);
-                                break;
-                            default:
-                                Action(isAlphanum(_theB) ? 1 : 2);
-                                break;
-                        }
+                        Action(2);
+
+                        //TODO: I don't understand why this was here, no need to keep 
+                        // new lines, we'll see when adding more tests
+
+                        //switch (_theB)
+                        //{
+                        //    case '{':
+                        //    case '[':
+                        //    case '(':
+                        //    case '+':
+                        //    case '-':
+                        //    case '!':
+                        //    case '~':
+                        //        Action(1);
+                        //        break;                            
+                        //    case ' ':                                     
+                        //        Action(3);
+                        //        break;
+                        //    default:
+                        //        Action(isAlphanum(_theB) ? 1 : 2);
+                        //        break;
+                        //}
                         break;
                     default:
                         switch (_theB)
@@ -168,117 +173,161 @@ namespace JsMinSharp
                     goto case 2;
                 case 2:
                     _theA = _theB;
-                    if (_theA == '\'' || _theA == '"' || _theA == '`')
+                    
+                    //Check for a string literal and process it if it is found
+                    if (IsStringLiteral((char)_theA))
                     {
-                        //This is a string literal...
-                        for (;;)
-                        {
-                            Put(_theA);
-                            _theA = Get();
-                            if (_theA == _theB)
-                            {
-                                break;
-                            }
-                            //check for escaped chars
-                            if (_theA == '\\')
-                            {
-                                Put(_theA);
-                                _theA = Get();
-                            }
-                            if (_theA == Eof)
-                            {
-                                throw new Exception(string.Format("Error: JSMIN unterminated string literal: {0}\n", _theA));
-                            }
-                        }
+                        HandleStringLiteral();
                     }
                     goto case 3;
                 case 3:
                     _theB = Next();
 
-                    //This is supposed to be testing for regex literals, however it doesn't actually work in many cases,
-                    // for example see this bug report: https://github.com/douglascrockford/JSMin/issues/11
-                    // or this: https://github.com/Shazwazza/ClientDependency/issues/73                    
-                    if (_theB == '/')
-                    {
-                        //This is the original logic from JSMin, but it doesn't cater for the above issue mentioned
-                        if (_theA == '(' || _theA == ',' || _theA == '=' || _theA == ':' ||
-                            _theA == '[' || _theA == '!' || _theA == '&' || _theA == '|' ||
-                            _theA == '?' || _theA == '+' || _theA == '-' || _theA == '~' ||
-                            _theA == '*' || _theA == '/' || _theA == '{' || _theA == '\n' ||
-                            //We've now added these additional characters and tests pass, the 'n' is specifically relating
-                            // to the term 'return', the space is there because a regex literal can always begin after a space
-                            _theA == '+' || _theA == 'n' || _theA == ' ')
-                        {
-                            Put(_theA);
-                            if (_theA == '/' || _theA == '*')
-                            {
-                                Put(' ');
-                            }
-                            Put(_theB);
-                            for (;;)
-                            {
-                                _theA = Get();
-                                if (_theA == '[')
-                                {
-                                    for (;;)
-                                    {
-                                        Put(_theA);
-                                        _theA = Get();
-                                        if (_theA == ']')
-                                        {
-                                            break;
-                                        }
-                                        if (_theA == '\\')
-                                        {
-                                            Put(_theA);
-                                            _theA = Get();
-                                        }
-                                        if (_theA == Eof)
-                                        {
-                                            throw new Exception(string.Format("Error: JSMIN Unterminated set in Regular Expression literal: {0}\n", _theA));
-                                        }
-                                    }
-                                }
-                                else if (_theA == '/')
-                                {
-                                    switch (Peek())
-                                    {
-                                        case 'i':
-                                        case 'g':
-                                            //regex modifiers, do we care?
-                                            break;
-                                        case ' ':
-                                            //skip the space
-                                            Put(_theA);
-                                            Get();
-                                            _theA = Get();
-                                            break;
-                                        case '/':
-                                        case '*':
-                                            throw new Exception(string.Format("Error: JSMIN Unterminated set in Regular Expression literal: {0}\n", _theA));
-                                    }
-                                    break;
-                                }
-                                else if (_theA == '\\')
-                                {
-                                    Put(_theA);
-                                    _theA = Get();
-                                }
-                                if (_theA == Eof)
-                                {
-                                    throw new Exception(string.Format("Error: JSMIN Unterminated Regular Expression literal: {0}\n", _theA));
-                                }
-                                Put(_theA);
-                            }
-                            _theB = Next();
-                        }
+                    //Check for a regex literal and process it if it is found
+                    if (IsRegexLiteral((char)_theA, (char)_theB))
+                    {                        
+                        HandleRegexLiteral();                        
                     }
                     goto default;
                 default:
                     break;
             }
         }
-        
+
+        /// <summary>
+        /// Used to determine if the sequence is a string literal
+        /// </summary>
+        /// <param name="current"></param>
+        /// <returns></returns>
+        private static bool IsStringLiteral(char current)
+        {
+            if (current == '\'' || current == '"' || current == '`')
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private void HandleStringLiteral()
+        {
+            //This is a string literal...
+            for (;;)
+            {
+                Put(_theA);
+                _theA = Get();
+                if (_theA == _theB)
+                {
+                    break;
+                }
+                //check for escaped chars
+                if (_theA == '\\')
+                {
+                    Put(_theA);
+                    _theA = Get();
+                }
+                if (_theA == Eof)
+                {
+                    throw new Exception(string.Format("Error: JSMIN unterminated string literal: {0}\n", _theA));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Determines if the sequence is a regex literal
+        /// </summary>
+        /// <returns></returns>
+        private static bool IsRegexLiteral(char current, char next)
+        {
+            //This is supposed to be testing for regex literals, however it doesn't actually work in many cases,
+            // for example see this bug report: https://github.com/douglascrockford/JSMin/issues/11
+            // or this: https://github.com/Shazwazza/ClientDependency/issues/73                    
+            if (next == '/')
+            {
+                //This is the original logic from JSMin, but it doesn't cater for the above issue mentioned
+                if (current == '(' || current == ',' || current == '=' || current == ':' ||
+                    current == '[' || current == '!' || current == '&' || current == '|' ||
+                    current == '?' || current == '+' || current == '-' || current == '~' ||
+                    current == '*' || current == '/' || current == '{' || current == '\n' ||
+                    //We've now added these additional characters and tests pass, the 'n' is specifically relating
+                    // to the term 'return', the space is there because a regex literal can always begin after a space
+                    current == '+' || current == 'n' || current == ' ')
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Used to iterate over and output the content of a Regex literal
+        /// </summary>
+        private void HandleRegexLiteral()
+        {
+            Put(_theA);
+            if (_theA == '/' || _theA == '*')
+            {
+                Put(' ');
+            }
+            Put(_theB);
+            for (;;)
+            {
+                _theA = Get();
+                if (_theA == '[')
+                {
+                    for (;;)
+                    {
+                        Put(_theA);
+                        _theA = Get();
+                        if (_theA == ']')
+                        {
+                            break;
+                        }
+                        if (_theA == '\\')
+                        {
+                            Put(_theA);
+                            _theA = Get();
+                        }
+                        if (_theA == Eof)
+                        {
+                            throw new Exception(string.Format("Error: JSMIN Unterminated set in Regular Expression literal: {0}\n", _theA));
+                        }
+                    }
+                }
+                else if (_theA == '/')
+                {
+                    switch (Peek())
+                    {
+                        case 'i':
+                        case 'g':
+                            //regex modifiers, do we care?
+                            break;
+                        case ' ':
+                            //skip the space
+                            Put(_theA);
+                            Get();
+                            _theA = Get();
+                            break;
+                        case '/':
+                        case '*':
+                            throw new Exception(string.Format("Error: JSMIN Unterminated set in Regular Expression literal: {0}\n", _theA));
+                    }
+                    break;
+                }
+                else if (_theA == '\\')
+                {
+                    Put(_theA);
+                    _theA = Get();
+                }
+                if (_theA == Eof)
+                {
+                    throw new Exception(string.Format("Error: JSMIN Unterminated Regular Expression literal: {0}\n", _theA));
+                }
+                Put(_theA);
+            }
+            _theB = Next();
+
+        }
+
         /// <summary>
         /// next -- get the next character, excluding comments. peek() is used to see
         ///  if a '/' is followed by a '/' or '*'.
