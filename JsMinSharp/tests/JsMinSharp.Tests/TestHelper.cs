@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using Xunit;
 
 namespace JsMinSharp.Tests
@@ -10,7 +11,7 @@ namespace JsMinSharp.Tests
         {
             var jsmin = new JsMin();
             var input = DoMinify(jsmin, inputFile);
-            var expected = File.ReadAllText(expectedFile.FullName);
+            var expected = File.ReadAllText(expectedFile.FullName, Encoding.UTF8);
 
             Assert.Equal(expected, input);
         }

@@ -110,10 +110,10 @@ alert(c.name);";
         {
             var script = @"function Test() {
 jQuery(this).append('<div>\
-		<div>\
-			<a href=""http://google.com"" /></a>\
-		</div>\
-	</div>');
+  <div>\
+    <a href=""http://google.com"" /></a>\
+  </div>\
+</div>');
 }";
 
             var minifier = new JsMin();
@@ -124,8 +124,7 @@ jQuery(this).append('<div>\
 
             //Assert
 
-            Assert.Equal("function Test(){jQuery(this).append('<div>\\  <div>\\   <a href=\"http://google.com\" /></a>\\  </div>\\ </div>');}",
-                output.Replace("\n", string.Empty));
+            Assert.Equal("function Test(){jQuery(this).append('<div>  <div>    <a href=\"http://google.com\" /></a>  </div></div>');}", output);
 
         }
 
@@ -144,7 +143,7 @@ jQuery(this).append('<div>\
         [Fact]
         public void JsMinify_Function()
         {
-            var script = @"(function(el,args)
+            var script = @"function(el,args)
 {
     if ( !args ) { args = {}; }
 }
@@ -153,7 +152,7 @@ jQuery(this).append('<div>\
 
             var output = TestHelper.DoMinify(minifier, script);
 
-            Assert.Equal("(function(el,args){if(!args){args={};}}", output);
+            Assert.Equal("function(el,args){if(!args){args={};}}", output);
         }
     }
 }

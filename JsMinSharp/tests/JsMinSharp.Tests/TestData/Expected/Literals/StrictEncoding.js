@@ -1,1 +1,0 @@
-﻿function myStrict(a,b){"use strict";return a+=b,b=+a*200,"one\x02two"+a+b}function notStrict(a,b){return a+=b,b=+a*200,"one\x02two"+a+b}

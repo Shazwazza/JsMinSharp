@@ -22,5 +22,7 @@ namespace JsMinSharp.Tests
             var expected = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Expected", "Literals", fileName));
             TestHelper.AssertFileMatch(input, expected);
         }
+
+    
     }
 }

@@ -248,6 +248,8 @@ namespace JsMinSharp
             {
                 Put(_theA);
                 _theA = Get();
+                //If the A matches B it means the string literal is done
+                // since at this moment B was the original A string literal (" or ')
                 if (_theA == _theB)
                 {
                     break;
@@ -255,8 +257,21 @@ namespace JsMinSharp
                 //check for escaped chars
                 if (_theA == '\\')
                 {
-                    Put(_theA);
-                    _theA = Get();
+                    //This scenario needs to cater for backslash line escapes (i.e. multi-line JS strings)
+                    if (Peek() == '\n')
+                    {
+                        //this is a multi-line string so we don't want to insert a line break here,
+                        // just get the next char that is not a line break/eof/or string termination
+                        do
+                        {
+                            _theA = Get();
+                        } while (_theA == '\n' && _theA != Eof && _theA != _theB);                        
+                    }
+                    else
+                    {
+                        Put(_theA);
+                        _theA = Get();
+                    }
                 }
                 if (_theA == Eof)
                 {
