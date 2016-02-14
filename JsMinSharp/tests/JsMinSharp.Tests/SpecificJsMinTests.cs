@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Moq;
 using Xunit;
@@ -13,13 +12,7 @@ namespace JsMinSharp.Tests
     /// </summary>
     public class SpecificJsMinTests
     {
-        private string DoMinify(JsMin minifier, string input)
-        {
-            using (var reader = new StringReader(input))
-            {
-                return minifier.Minify(reader);
-            }
-        }
+        
 
         [Fact]
         public void JsMinify_Escaped_Quotes_In_String_Literal()
@@ -30,7 +23,7 @@ namespace JsMinSharp.Tests
 
             //Act            
 
-            var output = DoMinify(minifier, script);
+            var output = TestHelper.DoMinify(minifier, script);
 
             Assert.Equal("\nvar asdf=\"Some string\\\'s with \\\"quotes\\\" in them\"", output);
         }
@@ -47,11 +40,11 @@ namespace JsMinSharp.Tests
             var minifier = new JsMin();
             //Act
 
-            var output1 = DoMinify(minifier, script1);
+            var output1 = TestHelper.DoMinify(minifier, script1);
             Assert.Equal("\n" + script1, output1);
-            var output2 = DoMinify(minifier, script2);
+            var output2 = TestHelper.DoMinify(minifier, script2);
             Assert.Equal("\n" + @"var ex=+/w$/.test(resizing),ey=+/^ n /.test(resizing);", output2);
-            var output3 = DoMinify(minifier, script3);
+            var output3 = TestHelper.DoMinify(minifier, script3);
             Assert.Equal("\n" + @"return /["",\n]/.test(text)?""\""""+text.replace(/\"" /g,""\""\"""")+""\"""":text;", output3);
         }
 
@@ -81,7 +74,7 @@ namespace JsMinSharp.Tests
 };";
             var minifier = new JsMin();
             //Act
-            var output = DoMinify(minifier, script);
+            var output = TestHelper.DoMinify(minifier, script);
             Assert.Equal(
                 "\nvar Messaging={GetMessage:function(callback){$.ajax({type:\"POST\",url:\"/Services/MessageService.asmx/HelloWorld\",data:\"{}\",contentType:\"application/json; charset=utf-8\",dataType:\"json\",success:function(msg){callback.apply(this,[msg.d]);}});}\nvar blah=1;blah++;blah=blah+2;var newBlah=++blah;newBlah+=234+4;};",
                 output);
@@ -105,7 +98,7 @@ alert(c.name);";
 
             //Act
 
-            var output = DoMinify(minifier, script);
+            var output = TestHelper.DoMinify(minifier, script);
 
             //Assert
 
@@ -127,7 +120,7 @@ jQuery(this).append('<div>\
 
             //Act
 
-            var output = DoMinify(minifier, script);
+            var output = TestHelper.DoMinify(minifier, script);
 
             //Assert
 
@@ -143,7 +136,7 @@ jQuery(this).append('<div>\
 
             var minifier = new JsMin();
 
-            var output = DoMinify(minifier, script);
+            var output = TestHelper.DoMinify(minifier, script);
 
             Assert.Equal("\n$(\"#TenderListType\").val(1..toString());", output);
         }
