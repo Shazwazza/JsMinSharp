@@ -45,15 +45,14 @@ namespace JsMinSharp
 {
     public class JsMin
     {
-        const int Eof = -1;
-
-        TextReader _sr;
-        TextWriter _sw;
-        int _theA;
-        int _theB;
-        int _theLookahead = Eof;
-        static int _theX = Eof;
-        static int _theY = Eof;
+        private const int Eof = -1;
+        private TextReader _sr;
+        private TextWriter _sw;
+        private int _theA;
+        private int _theB;
+        private int _theLookahead = Eof;
+        private int _theX = Eof;
+        private int _theY = Eof;
 
         public string Minify(TextReader reader)
         {
@@ -87,7 +86,7 @@ namespace JsMinSharp
                 switch (_theA)
                 {
                     case ' ':
-                        Action(isAlphanum(_theB) ? 1 : 2);
+                        Action(IsAlphanum(_theB) ? 1 : 2);
                         break;
                     case '\n':
                         Action(2);
@@ -117,8 +116,9 @@ namespace JsMinSharp
                     default:
                         switch (_theB)
                         {
+                            
                             case ' ':
-                                Action(isAlphanum(_theA) ? 1 : 3);
+                                Action(IsAlphanum(_theA) ? 1 : 3);
                                 break;
                             case '\n':
                                 switch (_theA)
@@ -134,7 +134,7 @@ namespace JsMinSharp
                                         Action(1);
                                         break;
                                     default:
-                                        Action(isAlphanum(_theA) ? 1 : 3);
+                                        Action(IsAlphanum(_theA) ? 1 : 3);
                                         break;
                                 }
                                 break;
@@ -162,6 +162,8 @@ namespace JsMinSharp
             {
                 case 1:
                     Put(_theA);
+
+                    //TODO: What is this checking for ?
                     if (
                         (_theY == '\n' || _theY == ' ') &&
                         (_theA == '+' || _theA == '-' || _theA == '*' || _theA == '/') &&
@@ -179,9 +181,13 @@ namespace JsMinSharp
                     {
                         HandleStringLiteral();
                     }
+                    else if (IsEndOfStatement((char) _theA))
+                    {
+                        HandleEndOfStatement();
+                    }
                     goto case 3;
                 case 3:
-                    _theB = Next();
+                    _theB = NextCharExcludingComments();
 
                     //Check for a regex literal and process it if it is found
                     if (IsRegexLiteral((char)_theA, (char)_theB))
@@ -191,6 +197,33 @@ namespace JsMinSharp
                     goto default;
                 default:
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Is the char an end of statement character == }
+        /// </summary>
+        /// <param name="current"></param>
+        /// <returns></returns>
+        private static bool IsEndOfStatement(char current)
+        {
+            return current == '}';
+        }
+
+        /// <summary>
+        /// write the end and skip all whitespace
+        /// </summary>
+        private void HandleEndOfStatement()
+        {
+            Put(_theA);
+            for (;;)
+            {
+                _theA = Get();                
+                if (!char.IsWhiteSpace((char) _theA) || _theA == Eof)
+                {
+                    break;
+                }
+                _theA = Get();
             }
         }
 
@@ -227,7 +260,7 @@ namespace JsMinSharp
                 }
                 if (_theA == Eof)
                 {
-                    throw new Exception(string.Format("Error: JSMIN unterminated string literal: {0}\n", _theA));
+                    throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");
                 }
             }
         }
@@ -289,7 +322,7 @@ namespace JsMinSharp
                         }
                         if (_theA == Eof)
                         {
-                            throw new Exception(string.Format("Error: JSMIN Unterminated set in Regular Expression literal: {0}\n", _theA));
+                            throw new Exception($"Error: JSMIN Unterminated set in Regular Expression literal: {_theA}\n");
                         }
                     }
                 }
@@ -309,7 +342,7 @@ namespace JsMinSharp
                             break;
                         case '/':
                         case '*':
-                            throw new Exception(string.Format("Error: JSMIN Unterminated set in Regular Expression literal: {0}\n", _theA));
+                            throw new Exception($"Error: JSMIN Unterminated set in Regular Expression literal: {_theA}\n");
                     }
                     break;
                 }
@@ -320,11 +353,11 @@ namespace JsMinSharp
                 }
                 if (_theA == Eof)
                 {
-                    throw new Exception(string.Format("Error: JSMIN Unterminated Regular Expression literal: {0}\n", _theA));
+                    throw new Exception($"Error: JSMIN Unterminated Regular Expression literal: {_theA}\n");
                 }
                 Put(_theA);
             }
-            _theB = Next();
+            _theB = NextCharExcludingComments();
 
         }
 
@@ -333,7 +366,7 @@ namespace JsMinSharp
         ///  if a '/' is followed by a '/' or '*'.
         /// </summary>
         /// <returns></returns>
-        private int Next()
+        private int NextCharExcludingComments()
         {
             int c = Get();
             if (c == '/')
@@ -401,7 +434,7 @@ namespace JsMinSharp
         /// peek -- get the next character without getting it.
         /// </summary>
         /// <returns></returns>
-        int Peek()
+        private int Peek()
         {
             _theLookahead = Get();
             return _theLookahead;
@@ -413,7 +446,7 @@ namespace JsMinSharp
         /// linefeed.
         /// </summary>
         /// <returns></returns>
-        int Get()
+        private int Get()
         {
             int c = _theLookahead;
             _theLookahead = Eof;
@@ -432,7 +465,7 @@ namespace JsMinSharp
             return ' ';
         }
 
-        void Put(int c)
+        private void Put(int c)
         {
             _sw.Write((char)c);
         }
@@ -443,7 +476,7 @@ namespace JsMinSharp
         /// </summary>
         /// <param name="c"></param>
         /// <returns></returns>
-        bool isAlphanum(int c)
+        private bool IsAlphanum(int c)
         {
             return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
                     (c >= 'A' && c <= 'Z') || c == '_' || c == '$' || c == '\\' ||
