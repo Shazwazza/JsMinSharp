@@ -68,5 +68,6 @@ namespace JsMinSharp.Tests
             TestHelper.AssertFileMatch(input, expected);
         }
 
+
     }
 }

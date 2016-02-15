@@ -1,1 +1,0 @@
-﻿var text="\udc00"
