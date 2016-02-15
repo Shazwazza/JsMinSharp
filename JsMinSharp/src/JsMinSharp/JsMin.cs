@@ -215,16 +215,12 @@ namespace JsMinSharp
         /// </summary>
         private void HandleEndOfStatement()
         {
+            //write the } and move next
             Put(_theA);
-            for (;;)
+            do
             {
-                _theA = Get();                
-                if (!char.IsWhiteSpace((char) _theA) || _theA == Eof)
-                {
-                    break;
-                }
                 _theA = Get();
-            }
+            } while (char.IsWhiteSpace((char)_theA));                       
         }
 
         /// <summary>
