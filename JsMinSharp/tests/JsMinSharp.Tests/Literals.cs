@@ -59,5 +59,14 @@ namespace JsMinSharp.Tests
             TestHelper.AssertFileMatch(input, expected);
         }
 
+        [Fact]
+        public void Member()
+        {
+            var fileName = "Member.js";
+            var input = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Input", "Literals", fileName));
+            var expected = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Expected", "Literals", fileName));
+            TestHelper.AssertFileMatch(input, expected);
+        }
+
     }
 }
