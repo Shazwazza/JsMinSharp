@@ -121,6 +121,8 @@ namespace JsMinSharp
                                 Action(IsAlphanum(_theA) ? 1 : 3);
                                 break;
                             case '\n':
+                            case '\u2028':
+                            case '\u2029':
                                 switch (_theA)
                                 {
                                     case '}':

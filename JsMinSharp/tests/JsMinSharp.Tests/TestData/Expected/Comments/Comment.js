@@ -1,1 +1,1 @@
-function Func(){}
+function Func(p1){}
