@@ -364,7 +364,9 @@ namespace JsMinSharp
                     current == '*' || current == '/' || current == '{' || current == '\n' ||
                     //We've now added these additional characters and tests pass, the 'n' is specifically relating
                     // to the term 'return', the space is there because a regex literal can always begin after a space
-                    current == '+' || current == 'n' || current == ' ')
+                    current == '+' || current == 'n'
+                        //adding this specifically makes some assignments fail with division symbols
+                        /*|| current == ' '*/)
                 {
                     return true;
                 }
