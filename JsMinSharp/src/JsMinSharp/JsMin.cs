@@ -53,6 +53,7 @@ namespace JsMinSharp
         private int _theLookahead = Eof;
         private int _theX = Eof;
         private int _theY = Eof;
+        private int _retStatement = -1;
 
         public string Minify(TextReader reader)
         {
@@ -165,85 +166,78 @@ namespace JsMinSharp
                 case 1:
                     Put(_theA);
 
-                    //TODO: What is this checking for ?
-                    if (
-                        (_theY == '\n' || _theY == ' ') &&
-                        (_theA == '+' || _theA == '-' || _theA == '*' || _theA == '/') &&
-                        (_theB == '+' || _theB == '-' || _theB == '*' || _theB == '/')
-                        )
-                    {
-                        Put(_theY);
-                    }
+                    //process unary operator or track return statement
+                    var handled1 = HandleUnaryOperator();// || TrackReturnStatement();
+
                     goto case 2;
                 case 2:
                     _theA = _theB;
+
+                    //process string literals or end of statement
+                    var handled2 = HandleStringLiteral() || HandleEndOfStatement();
                     
-                    //Check for a string literal and process it if it is found
-                    if (IsStringLiteral(_theA))
-                    {
-                        HandleStringLiteral();
-                    }
-                    else if (IsEndOfStatement(_theA))
-                    {
-                        HandleEndOfStatement();
-                    }
                     goto case 3;
                 case 3:
                     _theB = NextCharExcludingComments();
 
                     //Check for a regex literal and process it if it is found
-                    if (IsRegexLiteral(_theA, _theB))
-                    {                        
-                        HandleRegexLiteral();                        
-                    }
+                    HandleRegexLiteral();
+
                     goto default;
                 default:
                     break;
             }
         }
 
-        /// <summary>
-        /// Is the char an end of statement character == }
-        /// </summary>
-        /// <param name="current"></param>
-        /// <returns></returns>
-        private static bool IsEndOfStatement(int current)
+        private bool HandleUnaryOperator()
         {
-            return current == '}';
+            if (
+                (_theY == '\n' || _theY == ' ') &&
+                (_theA == '+' || _theA == '-' || _theA == '*' || _theA == '/') &&
+                (_theB == '+' || _theB == '-' || _theB == '*' || _theB == '/')
+                )
+            {
+                Put(_theY);
+                return true;
+            }
+            return false;
         }
+
+        //private bool TrackReturnStatement()
+        //{
+        //    const string r = "return";
+        //    if (_retStatement == -1 && _theA == 'r')
+        //    {
+                
+        //    }
+        //}
+
 
         /// <summary>
         /// write the end and skip all whitespace
         /// </summary>
-        private void HandleEndOfStatement()
+        private bool HandleEndOfStatement()
         {
+            if (_theA != '}') return false;
+
             //write the } and move next
             Put(_theA);
             do
             {
                 _theA = Get();
             } while (char.IsWhiteSpace((char)_theA));
-        }
 
-        /// <summary>
-        /// Used to determine if the sequence is a string literal
-        /// </summary>
-        /// <param name="current"></param>
-        /// <returns></returns>
-        private static bool IsStringLiteral(int current)
-        {
-            if (current == '\'' || current == '"' || current == '`')
-            {
-                return true;
-            }
-            return false;
+            return true;
         }
 
         /// <summary>
         /// Iterates through a string literal
         /// </summary>
-        private void HandleStringLiteral()
+        private bool HandleStringLiteral()
         {
+            if (_theA != '\'' && _theA != '"' && _theA != '`')
+                return false;
+            
             //only allowed with template strings
             var allowLineFeed = _theA == '`';
 
@@ -311,6 +305,7 @@ namespace JsMinSharp
                     throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");
                 }
             }
+            return true;
         }
 
         /// <summary>
@@ -345,40 +340,22 @@ namespace JsMinSharp
                 }
             }
         }
-
+        
         /// <summary>
-        /// Determines if the sequence is a regex literal
+        /// Used to iterate over and output the content of a Regex literal
         /// </summary>
-        /// <returns></returns>
-        private static bool IsRegexLiteral(int current, int next)
+        private bool HandleRegexLiteral()
         {
             //This is supposed to be testing for regex literals, however it doesn't actually work in many cases,
             // for example see this bug report: https://github.com/douglascrockford/JSMin/issues/11
             // or this: https://github.com/Shazwazza/ClientDependency/issues/73                    
-            if (next == '/')
-            {
-                //This is the original logic from JSMin, but it doesn't cater for the above issue mentioned
-                if (current == '(' || current == ',' || current == '=' || current == ':' ||
-                    current == '[' || current == '!' || current == '&' || current == '|' ||
-                    current == '?' || current == '+' || current == '-' || current == '~' ||
-                    current == '*' || current == '/' || current == '{' || current == '\n' ||
-                    //We've now added these additional characters and tests pass, the 'n' is specifically relating
-                    // to the term 'return', the space is there because a regex literal can always begin after a space
-                    current == '+' || current == 'n'
-                        //adding this specifically makes some assignments fail with division symbols
-                        /*|| current == ' '*/)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+            if (_theB != '/') return false;
+            //This is the original logic from JSMin, but it doesn't cater for the above issue mentioned
+            // We've now added these additional characters and tests pass: +
+            // we now need to also track a return statement to make it work
+            const string toMatch = "(,=:[!&|?+-~*/{\n+";
+            if (toMatch.IndexOf((char) _theA) < 0) return false;
 
-        /// <summary>
-        /// Used to iterate over and output the content of a Regex literal
-        /// </summary>
-        private void HandleRegexLiteral()
-        {
             Put(_theA);
             if (_theA == '/' || _theA == '*')
             {
@@ -441,7 +418,7 @@ namespace JsMinSharp
                 Put(_theA);
             }
             _theB = NextCharExcludingComments();
-
+            return false;
         }
 
         /// <summary>

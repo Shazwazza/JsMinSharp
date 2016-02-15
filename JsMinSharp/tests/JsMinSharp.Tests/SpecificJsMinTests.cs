@@ -13,10 +13,12 @@ namespace JsMinSharp.Tests
     /// </summary>
     public class SpecificJsMinTests
     {
+        private readonly ITestOutputHelper _output;
         private readonly TestHelper _helper;
 
         public SpecificJsMinTests(ITestOutputHelper output)
         {
+            _output = output;
             _helper = new TestHelper(output);
         }
 
@@ -47,10 +49,13 @@ namespace JsMinSharp.Tests
             //Act
 
             var output1 = _helper.DoMinify(minifier, script1);
+            _output.WriteLine(output1);
             Assert.Equal(script1, output1);
             var output2 = _helper.DoMinify(minifier, script2);
+            _output.WriteLine(output2);
             Assert.Equal(@"var ex=+/w$/.test(resizing),ey=+/^ n /.test(resizing);", output2);
             var output3 = _helper.DoMinify(minifier, script3);
+            _output.WriteLine(output3);
             Assert.Equal(@"return /["",\n]/.test(text)?""\""""+text.replace(/\"" /g,""\""\"""")+""\"""":text;", output3);
         }
 
