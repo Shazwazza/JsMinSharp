@@ -177,11 +177,11 @@ namespace JsMinSharp
                     _theA = _theB;
                     
                     //Check for a string literal and process it if it is found
-                    if (IsStringLiteral((char)_theA))
+                    if (IsStringLiteral(_theA))
                     {
                         HandleStringLiteral();
                     }
-                    else if (IsEndOfStatement((char) _theA))
+                    else if (IsEndOfStatement(_theA))
                     {
                         HandleEndOfStatement();
                     }
@@ -190,7 +190,7 @@ namespace JsMinSharp
                     _theB = NextCharExcludingComments();
 
                     //Check for a regex literal and process it if it is found
-                    if (IsRegexLiteral((char)_theA, (char)_theB))
+                    if (IsRegexLiteral(_theA, _theB))
                     {                        
                         HandleRegexLiteral();                        
                     }
@@ -205,7 +205,7 @@ namespace JsMinSharp
         /// </summary>
         /// <param name="current"></param>
         /// <returns></returns>
-        private static bool IsEndOfStatement(char current)
+        private static bool IsEndOfStatement(int current)
         {
             return current == '}';
         }
@@ -220,7 +220,7 @@ namespace JsMinSharp
             do
             {
                 _theA = Get();
-            } while (char.IsWhiteSpace((char)_theA));                       
+            } while (char.IsWhiteSpace((char)_theA));
         }
 
         /// <summary>
@@ -228,7 +228,7 @@ namespace JsMinSharp
         /// </summary>
         /// <param name="current"></param>
         /// <returns></returns>
-        private static bool IsStringLiteral(char current)
+        private static bool IsStringLiteral(int current)
         {
             if (current == '\'' || current == '"' || current == '`')
             {
@@ -348,7 +348,7 @@ namespace JsMinSharp
         /// Determines if the sequence is a regex literal
         /// </summary>
         /// <returns></returns>
-        private static bool IsRegexLiteral(char current, char next)
+        private static bool IsRegexLiteral(int current, int next)
         {
             //This is supposed to be testing for regex literals, however it doesn't actually work in many cases,
             // for example see this bug report: https://github.com/douglascrockford/JSMin/issues/11
@@ -456,7 +456,7 @@ namespace JsMinSharp
                         for (;;)
                         {
                             c = Get();
-                            if (c <= '\n')
+                            if (IsLineSeparator(c))
                             {
                                 break;
                             }
@@ -545,6 +545,10 @@ namespace JsMinSharp
             {
                 return '\n';
             }
+            if (c == '\u2028' || c == '\u2029')
+            {
+                return '\n';
+            }
             return ' ';
         }
 
@@ -564,6 +568,11 @@ namespace JsMinSharp
             return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
                     (c >= 'A' && c <= 'Z') || c == '_' || c == '$' || c == '\\' ||
                     c > 126);
+        }
+
+        private bool IsLineSeparator(int c)
+        {
+            return c <= '\n' || c == '\u2028' || c == '\u2029';
         }
 
     }

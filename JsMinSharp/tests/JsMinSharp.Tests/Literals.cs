@@ -3,6 +3,28 @@ using Xunit;
 
 namespace JsMinSharp.Tests
 {
+    public class Comments
+    {
+        [Fact]
+        public void Comment()
+        {
+            var fileName = "Comment.js";
+            var input = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Input", "Comments", fileName));
+            var expected = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Expected", "Comments", fileName));
+            TestHelper.AssertFileMatch(input, expected);
+        }
+
+        [Fact]
+        public void UnterminatedComment()
+        {
+            var fileName = "UnterminatedComment.js";
+            var input = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Input", "Comments", fileName));
+            var expected = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Expected", "Comments", fileName));
+            TestHelper.AssertException(input, expected);
+        }
+
+    }
+
     public class Literals
     {
         [Fact]

@@ -7,6 +7,12 @@ namespace JsMinSharp.Tests
 {
     public class TestHelper
     {
+        public static void AssertException(FileInfo inputFile, FileInfo expectedFile)
+        {
+            var jsmin = new JsMin();
+            Assert.Throws<Exception>(() => DoMinify(jsmin, inputFile));
+        }
+
         public static void AssertFileMatch(FileInfo inputFile, FileInfo expectedFile)
         {
             var jsmin = new JsMin();
