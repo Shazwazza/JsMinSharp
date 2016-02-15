@@ -1,28 +1,39 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace JsMinSharp.Tests
 {
     public class TestHelper
     {
-        public static void AssertException(FileInfo inputFile, FileInfo expectedFile)
+        private readonly ITestOutputHelper _output;
+
+        public TestHelper(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
+        public void AssertException(FileInfo inputFile, FileInfo expectedFile)
         {
             var jsmin = new JsMin();
             Assert.Throws<Exception>(() => DoMinify(jsmin, inputFile));
         }
 
-        public static void AssertFileMatch(FileInfo inputFile, FileInfo expectedFile)
+        public void AssertFileMatch(FileInfo inputFile, FileInfo expectedFile)
         {
             var jsmin = new JsMin();
             var input = DoMinify(jsmin, inputFile);
             var expected = File.ReadAllText(expectedFile.FullName, Encoding.UTF8);
 
+            _output.WriteLine(input);
+
             Assert.Equal(expected, input);
         }
 
-        public static string DoMinify(JsMin minifier, string input)
+        public string DoMinify(JsMin minifier, string input)
         {
             using (var reader = new StringReader(input))
             {
@@ -30,7 +41,7 @@ namespace JsMinSharp.Tests
             }
         }
 
-        public static string DoMinify(JsMin minifier, FileInfo input)
+        public string DoMinify(JsMin minifier, FileInfo input)
         {
             using (var reader = File.OpenText(input.FullName))
             {
