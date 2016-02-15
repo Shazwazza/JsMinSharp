@@ -241,41 +241,109 @@ namespace JsMinSharp
             return false;
         }
 
+        /// <summary>
+        /// Iterates through a string literal
+        /// </summary>
         private void HandleStringLiteral()
         {
-            //This is a string literal...
+            //only allowed with template strings
+            var allowLineFeed = _theA == '`';
+
+            //write the start quote
+            Put(_theA);
+            _theA = Get(replaceCr: !allowLineFeed); //don't replace CR here, if we need to deal with that
+
             for (;;)
             {
-                Put(_theA);
-                _theA = Get();
                 //If the A matches B it means the string literal is done
                 // since at this moment B was the original A string literal (" or ')
                 if (_theA == _theB)
                 {
+                    //write the end quote
+                    Put(_theA);
+                    _theA = Get();
                     break;
                 }
-                //check for escaped chars
-                if (_theA == '\\')
+
+                Put(_theA);
+                _theA = Get(replaceCr: !allowLineFeed); //don't replace CR here, if we need to deal with that
+
+                switch (_theA)
                 {
-                    //This scenario needs to cater for backslash line escapes (i.e. multi-line JS strings)
-                    if (Peek() == '\n')
-                    {
-                        //this is a multi-line string so we don't want to insert a line break here,
-                        // just get the next char that is not a line break/eof/or string termination
-                        do
+                    case '\r':
+                        if (!allowLineFeed)
+                            throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");
+                        //if we're allowing line feeds, then just continue to write it
+                        break;
+                    case '\n':
+                        if (!allowLineFeed)
+                            throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");
+                        //if we're allowing line feeds, then just continue to write it
+                        break;
+                    case '\\':
+                        //check for escaped chars
+
+                        //This scenario needs to cater for backslash line escapes (i.e. multi-line JS strings)
+                        if (Peek() == '\n')
                         {
+                            //this is a multi-line string so we don't want to insert a line break here,
+                            // just get the next char that is not a line break/eof/or string termination
+                            do
+                            {
+                                _theA = Get();
+                            } while (_theA == '\n' && _theA != Eof && _theA != _theB);
+                        }
+                        else
+                        {
+                            Put(_theA);
                             _theA = Get();
-                        } while (_theA == '\n' && _theA != Eof && _theA != _theB);                        
-                    }
-                    else
-                    {
-                        Put(_theA);
-                        _theA = Get();
-                    }
+                        }
+                        break;
+                    case '$':
+                        //check for string templates (i.e. ${ } )
+                        if (Peek() == '{')
+                        {
+                            HandleStringTemplateBlock();
+                        }
+                        break;
                 }
+                
                 if (_theA == Eof)
                 {
                     throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Iterates through a string template block - and caters for nested blocks
+        /// </summary>
+        private void HandleStringTemplateBlock()
+        {
+            //This is a string template block
+            for (;;)
+            {
+                Put(_theA);
+                _theA = Get();
+
+                switch (_theA)
+                {
+                    case '}':
+                        //write the end bracket and read
+                        Put(_theA);
+                        _theA = Get();
+                        //exit!
+                        return;
+                    case '$':
+                        //check for inner string templates (i.e. ${ } )
+                        if (Peek() == '{')
+                        {
+                            //recurse
+                            HandleStringTemplateBlock();
+                        }
+                        break;
+                    case Eof:
+                        throw new Exception($"Error: JSMIN unterminated string template block: {_theA}\n");
                 }
             }
         }
@@ -461,7 +529,7 @@ namespace JsMinSharp
         /// linefeed.
         /// </summary>
         /// <returns></returns>
-        private int Get()
+        private int Get(bool replaceCr = true)
         {
             int c = _theLookahead;
             _theLookahead = Eof;
@@ -473,7 +541,11 @@ namespace JsMinSharp
             {
                 return c;
             }
-            if (c == '\r')
+            if (c == '\r' && !replaceCr)
+            {
+                return c;
+            }
+            if (c == '\r' && replaceCr)
             {
                 return '\n';
             }

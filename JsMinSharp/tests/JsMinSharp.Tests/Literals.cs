@@ -41,5 +41,14 @@ namespace JsMinSharp.Tests
             TestHelper.AssertFileMatch(input, expected);
         }
 
+        [Fact]
+        public void TemplateLiterals()
+        {
+            var fileName = "TemplateLiterals.js";
+            var input = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Input", "Literals", fileName));
+            var expected = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Expected", "Literals", fileName));
+            TestHelper.AssertFileMatch(input, expected);
+        }
+
     }
 }
