@@ -117,7 +117,7 @@ namespace JsMinSharp
                     default:
                         switch (_theB)
                         {
-                            
+
                             case ' ':
                                 Action(IsAlphanum(_theA) ? 1 : 3);
                                 break;
@@ -167,7 +167,7 @@ namespace JsMinSharp
                     Put(_theA);
 
                     //process unary operator or track return statement
-                    var handled1 = HandleUnaryOperator();// || TrackReturnStatement();
+                    var handled1 = HandleUnaryOperator() || TrackReturnStatement();
 
                     goto case 2;
                 case 2:
@@ -175,7 +175,7 @@ namespace JsMinSharp
 
                     //process string literals or end of statement
                     var handled2 = HandleStringLiteral() || HandleEndOfStatement();
-                    
+
                     goto case 3;
                 case 3:
                     _theB = NextCharExcludingComments();
@@ -191,11 +191,9 @@ namespace JsMinSharp
 
         private bool HandleUnaryOperator()
         {
-            if (
-                (_theY == '\n' || _theY == ' ') &&
-                (_theA == '+' || _theA == '-' || _theA == '*' || _theA == '/') &&
-                (_theB == '+' || _theB == '-' || _theB == '*' || _theB == '/')
-                )
+            const string operators = "+-*/";
+            if ((_theY == '\n' || _theY == ' ') &&
+                (operators.IndexOf((char)_theA) >= 0) && (operators.IndexOf((char)_theB) >= 0))
             {
                 Put(_theY);
                 return true;
@@ -203,15 +201,29 @@ namespace JsMinSharp
             return false;
         }
 
-        //private bool TrackReturnStatement()
-        //{
-        //    const string r = "return";
-        //    if (_retStatement == -1 && _theA == 'r')
-        //    {
-                
-        //    }
-        //}
+        private bool TrackReturnStatement()
+        {
+            const string r = "return";
+            const string preReturn = ";)} ";
+            if (_retStatement == -1 && _theA == 'r' &&
+                (preReturn.IndexOf((char)_theY) >= 0 || _theY == 'r'))
+            {
+                _retStatement = 0;
+                return true;
+            }
+            if (_retStatement >= (r.Length-1))
+            {
+                _retStatement = -1;
+                return false;
+            }
+            if (_retStatement < 0) return false;
 
+            _retStatement++;
+            if (r[_retStatement] == _theA) return true;
+
+            _retStatement = -1;
+            return false;
+        }
 
         /// <summary>
         /// write the end and skip all whitespace
@@ -237,7 +249,7 @@ namespace JsMinSharp
         {
             if (_theA != '\'' && _theA != '"' && _theA != '`')
                 return false;
-            
+
             //only allowed with template strings
             var allowLineFeed = _theA == '`';
 
@@ -299,7 +311,7 @@ namespace JsMinSharp
                         }
                         break;
                 }
-                
+
                 if (_theA == Eof)
                 {
                     throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");
@@ -340,7 +352,7 @@ namespace JsMinSharp
                 }
             }
         }
-        
+
         /// <summary>
         /// Used to iterate over and output the content of a Regex literal
         /// </summary>
@@ -354,7 +366,8 @@ namespace JsMinSharp
             // We've now added these additional characters and tests pass: +
             // we now need to also track a return statement to make it work
             const string toMatch = "(,=:[!&|?+-~*/{\n+";
-            if (toMatch.IndexOf((char) _theA) < 0) return false;
+            if (toMatch.IndexOf((char)_theA) < 0 && _retStatement != 5)
+                return false;
 
             Put(_theA);
             if (_theA == '/' || _theA == '*')
