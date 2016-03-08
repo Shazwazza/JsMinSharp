@@ -1,0 +1,1 @@
+﻿b.prototype._normalizeURL=function(a){return/^https?:\/\//.test(a)||(a="http://"+a),a};b.prototype._normalizeURL=function(a){return/^https?:\/\//.test(a)||(a="http://"+a),a};var ex=+/w$/.test(resizing),ey=+/^n/.test(resizing);function test(){var text="asdfasdf";return /[",\n]/.test(text)?"\""+text.replace(/\" /g,"\"\"")+"\"":text;}

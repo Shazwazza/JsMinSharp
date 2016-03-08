@@ -155,8 +155,6 @@ namespace JsMinSharp
         ///      1   Output A.Copy B to A.Get the next B.
         ///      2   Copy B to A. Get the next B. (Delete A).
         ///      3   Get the next B. (Delete B).
-        /// action treats a string as a single character.Wow!
-        /// action recognizes a regular expression if it is preceded by(or , or =.
         /// </summary>
         /// <param name="d"></param>
         void Action(int d)
@@ -166,19 +164,22 @@ namespace JsMinSharp
                 case 1:
                     Put(_theA);
 
-                    //process unary operator or track return statement
-                    var handled1 = HandleUnaryOperator() || TrackReturnStatement();
+                    //process unary operator
+                    var handled1 = HandleUnaryOperator();
 
                     goto case 2;
                 case 2:
                     _theA = _theB;
 
-                    //process string literals or end of statement
-                    var handled2 = HandleStringLiteral() || HandleEndOfStatement();
-
+                    //process string literals or end of statement and track return statement
+                    var handled2 = (HandleStringLiteral() || HandleEndOfStatement());
+                    
                     goto case 3;
                 case 3:
                     _theB = NextCharExcludingComments();
+
+                    //track return statement
+                    var handled3 = TrackReturnStatement();
 
                     //Check for a regex literal and process it if it is found
                     HandleRegexLiteral();
@@ -204,17 +205,24 @@ namespace JsMinSharp
         private bool TrackReturnStatement()
         {
             const string r = "return";
-            const string preReturn = ";)} ";
+            const string preReturn = ";){} ";
             if (_retStatement == -1 && _theA == 'r' &&
-                (preReturn.IndexOf((char)_theY) >= 0 || _theY == 'r'))
+                (preReturn.IndexOf((char)_theY) >= 0 || char.IsWhiteSpace((char)_theY) || _theY == 'r'))
             {
                 _retStatement = 0;
                 return true;
             }
+            
             if (_retStatement >= (r.Length-1))
             {
-                _retStatement = -1;
-                return false;
+                //reset when there is a return statement and the next char is not whitespace
+                if (!char.IsWhiteSpace((char) _theA))
+                {
+                    _retStatement = -1;
+                    return false;
+                }
+                //currently there's only whitespace but there is a return statement so just exit
+                return true;
             }
             if (_retStatement < 0) return false;
 
@@ -358,13 +366,16 @@ namespace JsMinSharp
         /// </summary>
         private bool HandleRegexLiteral()
         {
-            //This is supposed to be testing for regex literals, however it doesn't actually work in many cases,
-            // for example see this bug report: https://github.com/douglascrockford/JSMin/issues/11
-            // or this: https://github.com/Shazwazza/ClientDependency/issues/73                    
             if (_theB != '/') return false;
-            //This is the original logic from JSMin, but it doesn't cater for the above issue mentioned
-            // We've now added these additional characters and tests pass: +
-            // we now need to also track a return statement to make it work
+
+            //The original testing for regex literals didn't actually work in many cases,
+            // for example see these bug reports: 
+            //  https://github.com/douglascrockford/JSMin/issues/11
+            //  https://github.com/Shazwazza/ClientDependency/issues/73                    
+
+            //The original logic from JSMin doesn't cater for the above issues mentioned
+            // We've now added these additional characters to be able to preceed a regex literal: +
+            // And now we also track a return statement which can preceed a regex literal.
             const string toMatch = "(,=:[!&|?+-~*/{\n+";
             if (toMatch.IndexOf((char)_theA) < 0 && _retStatement != 5)
                 return false;

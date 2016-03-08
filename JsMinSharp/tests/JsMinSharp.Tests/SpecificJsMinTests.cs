@@ -34,30 +34,7 @@ namespace JsMinSharp.Tests
             var output = _helper.DoMinify(minifier, script);
 
             Assert.Equal("var asdf=\"Some string\\\'s with \\\"quotes\\\" in them\"", output);
-        }
-
-        [Fact]
-        public void JsMinify_Handles_Regex()
-        {
-            var script1 = @"b.prototype._normalizeURL=function(a){return/^https?:\/\//.test(a)||(a=""http://""+a),a}";
-            var script2 = @"var ex = +  /w$/.test(resizing),
-    ey = +/^ n /.test(resizing); ";
-            var script3 = @"return /["",\n]/.test(text)
-      ? ""\"""" + text.replace(/\"" / g, ""\""\"""") + ""\""""
-      : text; ";
-            var minifier = new JsMin();
-            //Act
-
-            //var output1 = _helper.DoMinify(minifier, script1);
-            //_output.WriteLine(output1);
-            //Assert.Equal(script1, output1);
-            //var output2 = _helper.DoMinify(minifier, script2);
-            //_output.WriteLine(output2);
-            //Assert.Equal(@"var ex=+/w$/.test(resizing),ey=+/^ n /.test(resizing);", output2);
-            var output3 = _helper.DoMinify(minifier, script3);
-            _output.WriteLine(output3);
-            Assert.Equal(@"return /["",\n]/.test(text)?""\""""+text.replace(/\"" /g,""\""\"""")+""\"""":text;", output3);
-        }
+        }      
 
         [Fact]
         public void JsMinify_Minify()

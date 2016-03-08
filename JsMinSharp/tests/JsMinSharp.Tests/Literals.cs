@@ -108,6 +108,15 @@ namespace JsMinSharp.Tests
         }
 
         [Fact]
+        public void ReturnRegExp()
+        {
+            var fileName = "ReturnRegExp.js";
+            var input = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Input", "Literals", fileName));
+            var expected = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Expected", "Literals", fileName));
+            _helper.AssertFileMatch(input, expected);
+        }
+
+        [Fact]
         public void TemplateLiterals()
         {
             var fileName = "TemplateLiterals.js";
