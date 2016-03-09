@@ -90,6 +90,8 @@ namespace JsMinSharp
                         Action(IsAlphanum(_theB) ? 1 : 2);
                         break;
                     case '\n':
+                    case '\u2028':
+                    case '\u2029':
                         Action(2);
 
                         //TODO: I don't understand why this was here, no need to keep 
@@ -172,7 +174,7 @@ namespace JsMinSharp
                     _theA = _theB;
 
                     //process string literals or end of statement and track return statement
-                    var handled2 = (HandleStringLiteral() || HandleEndOfStatement());
+                    var handled2 = HandleStringLiteral() || HandleEndOfStatement();
                     
                     goto case 3;
                 case 3:
@@ -257,10 +259,10 @@ namespace JsMinSharp
         {
             if (_theA != '\'' && _theA != '"' && _theA != '`')
                 return false;
-
+            
             //only allowed with template strings
             var allowLineFeed = _theA == '`';
-
+          
             //write the start quote
             Put(_theA);
             _theA = Get(replaceCr: !allowLineFeed); //don't replace CR here, if we need to deal with that
@@ -273,20 +275,17 @@ namespace JsMinSharp
                 {
                     //write the end quote
                     Put(_theA);
-                    _theA = Get();
+
+                    //reset, this essentially resets the process
+                    _theA = ' ';                    
                     break;
                 }
 
-                Put(_theA);
-                _theA = Get(replaceCr: !allowLineFeed); //don't replace CR here, if we need to deal with that
+                var skipRead = false;
 
                 switch (_theA)
-                {
+                {                 
                     case '\r':
-                        if (!allowLineFeed)
-                            throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");
-                        //if we're allowing line feeds, then just continue to write it
-                        break;
                     case '\n':
                         if (!allowLineFeed)
                             throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");
@@ -296,19 +295,24 @@ namespace JsMinSharp
                         //check for escaped chars
 
                         //This scenario needs to cater for backslash line escapes (i.e. multi-line JS strings)
-                        if (Peek() == '\n')
+                        switch (Peek())
                         {
-                            //this is a multi-line string so we don't want to insert a line break here,
-                            // just get the next char that is not a line break/eof/or string termination
-                            do
-                            {
+                            case '\n':
+                                //this is a multi-line string so we don't want to insert a line break here,
+                                // just get the next char that is not a line break/eof/or string termination
+                                do
+                                {
+                                    _theA = Get();
+                                } while (_theA == '\n' && _theA != Eof && _theA != _theB);
+                                break;
+                            default:
+                                Put(_theA);         //write the backslash
+                                _theA = Get();      //get the escaped char
+                                if (_theA == Eof) throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");                                
+                                Put(_theA);         //write the escaped char
                                 _theA = Get();
-                            } while (_theA == '\n' && _theA != Eof && _theA != _theB);
-                        }
-                        else
-                        {
-                            Put(_theA);
-                            _theA = Get();
+                                skipRead = true;    //go to beginning of loop
+                                break;
                         }
                         break;
                     case '$':
@@ -316,6 +320,7 @@ namespace JsMinSharp
                         if (Peek() == '{')
                         {
                             HandleStringTemplateBlock();
+                            skipRead = true;    //go to beginning of loop
                         }
                         break;
                 }
@@ -323,6 +328,12 @@ namespace JsMinSharp
                 if (_theA == Eof)
                 {
                     throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");
+                }
+
+                if (!skipRead)
+                {
+                    Put(_theA);
+                    _theA = Get(replaceCr: !allowLineFeed); //don't replace CR here, if we need to deal with that    
                 }
             }
             return true;
@@ -334,11 +345,12 @@ namespace JsMinSharp
         private void HandleStringTemplateBlock()
         {
             //This is a string template block
+
+            Put(_theA);     //write the $
+            _theA = Get();  //get next (this will be { )
+
             for (;;)
             {
-                Put(_theA);
-                _theA = Get();
-
                 switch (_theA)
                 {
                     case '}':
@@ -358,6 +370,9 @@ namespace JsMinSharp
                     case Eof:
                         throw new Exception($"Error: JSMIN unterminated string template block: {_theA}\n");
                 }
+
+                Put(_theA);
+                _theA = Get();
             }
         }
 
@@ -458,6 +473,7 @@ namespace JsMinSharp
                 switch (Peek())
                 {
                     case '/':
+                        //handle single line comments
                         for (;;)
                         {
                             c = Get();
@@ -468,17 +484,22 @@ namespace JsMinSharp
                         }
                         break;
                     case '*':
-                        Get();
-                        while (c != ' ')
+                        //handle multi-line comments
+                        Get(); //move to *
+
+                        for (;;)
                         {
-                            switch (Get())
+                            var exit = false;
+                            c = Get(); //read next
+                            switch (c)
                             {
                                 case '*':
                                     var currPeek = Peek();
                                     if (currPeek == '/')
                                     {
-                                        Get();
-                                        c = ' ';
+                                        //we're at the end of the comment
+
+                                        Get(); //move to /
 
                                         //In one very peculiar circumstance, if the JS value is like:
                                         // val(1 /* Calendar */.toString());
@@ -499,16 +520,21 @@ namespace JsMinSharp
                                             }
                                         }
 
+                                        c = Get(); //move past the comment
+                                        exit = true;
                                     }
                                     break;
                                 case Eof:
                                     throw new Exception("Error: JSMIN Unterminated comment.\n");
                             }
+
+                            if (exit)
+                                break;
                         }
                         break;
                 }
             }
-            //return c;
+
             _theY = _theX;
             _theX = c;
             return c;

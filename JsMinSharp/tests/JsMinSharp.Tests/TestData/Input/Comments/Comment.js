@@ -16,3 +16,5 @@
     if(true){alert('second');}
     @*/ 
 }
+
+var h = "hello"/* remove this*/;

@@ -1,1 +1,1 @@
-function Func(p1){}
+function Func(p1){}var h="hello";

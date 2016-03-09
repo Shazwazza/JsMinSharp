@@ -28,7 +28,7 @@ namespace JsMinSharp.Tests
             var input = DoMinify(jsmin, inputFile);
             var expected = File.ReadAllText(expectedFile.FullName, Encoding.UTF8);
 
-            _output.WriteLine(input);
+            _output.WriteLine("Expected: " + expected);
 
             Assert.Equal(expected, input);
         }
@@ -37,7 +37,9 @@ namespace JsMinSharp.Tests
         {
             using (var reader = new StringReader(input))
             {
-                return minifier.Minify(reader);
+                var result = minifier.Minify(reader);
+                _output.WriteLine("Minified: " + result);
+                return result;
             }
         }
 
@@ -45,7 +47,9 @@ namespace JsMinSharp.Tests
         {
             using (var reader = File.OpenText(input.FullName))
             {
-                return minifier.Minify(reader);
+                var result = minifier.Minify(reader);
+                _output.WriteLine("Minified: " + result);
+                return result;
             }
         }
 
