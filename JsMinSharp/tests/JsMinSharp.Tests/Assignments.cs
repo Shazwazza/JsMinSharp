@@ -31,5 +31,14 @@ namespace JsMinSharp.Tests
             _helper.AssertFileMatch(input, expected);
         }
 
+        [Fact]
+        public void InClauseMultiline()
+        {
+            var fileName = "InClauseMultiline.js";
+            var input = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Input", "Assignments", fileName));
+            var expected = new FileInfo(Path.Combine(TestHelper.TestDataFolder, "Expected", "Assignments", fileName));
+            _helper.AssertFileMatch(input, expected);
+        }
+
     }
 }

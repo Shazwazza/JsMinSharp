@@ -7,6 +7,7 @@ using System.Text;
  * way. I haven't seen any other C based implementations of this with these fixes,
  * though there is a python implementation which is still actively developed...
  * though looks a whole lot different.
+ * Much of this has now been refactored, slightly more readable but still just as crazy.
  * - Shannon Deminick
  */
 
@@ -54,6 +55,7 @@ namespace JsMinSharp
         private int _theX = Eof;
         private int _theY = Eof;
         private int _retStatement = -1;
+        private bool _start = false;
 
         public string Minify(TextReader reader)
         {
@@ -92,29 +94,47 @@ namespace JsMinSharp
                     case '\n':
                     case '\u2028':
                     case '\u2029':
-                        Action(2);
+                        
+                        switch (_theB)
+                        {                           
+                            //TODO: This was in the original logic, not sure why
+                            //case '{':
+                            //case '[':
+                            //case '(':
+                            //case '+':
+                            //case '-':
+                            //case '!':
+                            //case '~':                                
+                            //    Action(1);
+                            //    break;
+                            case ' ':
+                            case '\n':
+                            case '\u2028':
+                            case '\u2029':
+                                //new line -> read next
+                                Action(2);
+                                break;                            
+                            default:
+                                if (!_start)
+                                {
+                                    //this is the first write, we don't want to write a new line to begin,
+                                    // read next
+                                    Action(2);
+                                    break;
+                                }
 
-                        //TODO: I don't understand why this was here, no need to keep 
-                        // new lines, we'll see when adding more tests
+                                var alpha = IsAlphanum(_theB);
 
-                        //switch (_theB)
-                        //{
-                        //    case '{':
-                        //    case '[':
-                        //    case '(':
-                        //    case '+':
-                        //    case '-':
-                        //    case '!':
-                        //    case '~':
-                        //        Action(1);
-                        //        break;                            
-                        //    case ' ':                                     
-                        //        Action(3);
-                        //        break;
-                        //    default:
-                        //        Action(isAlphanum(_theB) ? 1 : 2);
-                        //        break;
-                        //}
+                                if (alpha)
+                                {
+                                    _theA = ' '; //convert to space instead of line feed
+                                    Action(1);
+                                }
+                                else
+                                    Action(2);
+                                                                   
+                                break;
+                        }
                         break;
                     default:
                         switch (_theB)
@@ -165,6 +185,7 @@ namespace JsMinSharp
             {
                 case 1:
                     Put(_theA);
+                    _start = true;
 
                     //process unary operator
                     var handled1 = HandleUnaryOperator();
