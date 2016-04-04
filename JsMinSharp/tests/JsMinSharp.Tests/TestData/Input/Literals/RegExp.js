@@ -29,3 +29,10 @@ var foo = location.href.replace(/[\s?!@#$%^&*()_=+,.<>'":;\[\]/|]/g, '-');
 
 var re = /\w+/;
 alert("hi");
+
+(function (global) {
+    if (typeof global === "object") {
+        void (0);
+    }
+    // Do not consider this regex
+}(typeof window !== "undefined"));
