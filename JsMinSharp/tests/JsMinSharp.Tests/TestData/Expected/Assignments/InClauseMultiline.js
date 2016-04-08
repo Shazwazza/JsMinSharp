@@ -1,1 +1,3 @@
-﻿return d in g;return s in d;
+﻿return d in
+g;return s in
+d;
