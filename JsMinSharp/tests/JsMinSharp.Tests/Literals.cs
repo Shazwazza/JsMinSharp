@@ -11,7 +11,7 @@ namespace JsMinSharp.Tests
         public Literals(ITestOutputHelper output)
         {
             _helper = new TestHelper(output);
-        }
+        }        
 
         [Fact]
         public void ArrayLiteral()

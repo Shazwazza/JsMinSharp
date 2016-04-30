@@ -29,6 +29,8 @@ var foo = location.href.replace(/[\s?!@#$%^&*()_=+,.<>'":;\[\]/|]/g, '-');
 
 var re = /\w+/;
 alert("hi");
+//No-op! ... this is still valid JS even though it doesn't do anything
+/android.*safari.*/i.test(i);
 
 (function (global) {
     if (typeof global === "object") {
