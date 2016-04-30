@@ -413,7 +413,7 @@ namespace JsMinSharp
             // And now we also track a return statement which can preceed a regex literal.
             // To fix the single line no-op  issue - we need to allow for a new line to precede a 
             // regex statement too but _theA will not be a newline char here, only _theY will be.
-            const string toMatch = "(,=:[!&|?+-~*/{\n+";
+            const string toMatch = "(,=:[!&|?+-~*/{\n+;";
             if (toMatch.IndexOf((char)_theA) < 0 && (char)_theY != '\n' && _retStatement != 5)
                 return false;
 
