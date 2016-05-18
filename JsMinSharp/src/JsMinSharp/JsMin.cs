@@ -327,7 +327,8 @@ namespace JsMinSharp
                             default:
                                 Put(_theA);         //write the backslash
                                 _theA = Get();      //get the escaped char
-                                if (_theA == Eof) throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");                                
+                                if (_theA == Eof)
+                                    throw new Exception($"Error: JSMIN unterminated string literal: {_theA}\n");                                
                                 Put(_theA);         //write the escaped char
                                 _theA = Get();
                                 skipRead = true;    //go to beginning of loop
@@ -336,7 +337,8 @@ namespace JsMinSharp
                         break;
                     case '$':
                         //check for string templates (i.e. ${ } )
-                        if (Peek() == '{')
+                        //this must be enclosed in a backtick string
+                        if (_theB == '`' && Peek() == '{')
                         {
                             HandleStringTemplateBlock();
                             skipRead = true;    //go to beginning of loop

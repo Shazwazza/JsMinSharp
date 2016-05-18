@@ -2,7 +2,7 @@
 {
   if ( !args ) { args = {}; }
   document.write('<script type="text/javascript">foo</script>');
-  
+  var v = args[i].indexOf("'${") != -1;
   var toggleTextF = argWithDefault(args.togf,"°F"); // degree symbol might get escaped depending on output encoding
   var toggleTextC = argWithDefault(args.togc,"°C"); // degree symbol might get escaped depending on output encoding
   
