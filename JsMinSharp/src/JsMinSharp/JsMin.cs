@@ -559,6 +559,26 @@ namespace JsMinSharp
                 }
             }
 
+            //ECMA javascript standard comment format <!--singleLinecommentChars--> 
+            else if (c=='<')
+            {
+                if (Peek()=='!')
+                {
+                    for(;;)
+                    {
+                        c = Get();
+                        if(c=='-'){
+                            if(Peek()=='>')
+                            {
+                                Get();
+                                break;
+                            }
+                        }
+                    }
+                    c = Get();
+                }
+            }
+
             _theY = _theX;
             _theX = c;
             return c;
