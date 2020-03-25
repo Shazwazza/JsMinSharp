@@ -10,30 +10,37 @@ namespace JsMinSharp.Tests
     public class TestHelper
     {
         private readonly ITestOutputHelper _output;
+        private readonly Func<IMinifier> _minifier;
 
-        public TestHelper(ITestOutputHelper output)
+
+        public TestHelper(ITestOutputHelper output, Func<IMinifier> minifier = null)
         {
             _output = output;
+            _minifier = minifier ?? (() => new JsMin()) ;
         }
 
         public void AssertException(FileInfo inputFile, FileInfo expectedFile)
         {
-            var jsmin = new JsMin();
+            var jsmin = _minifier();
             Assert.Throws<Exception>(() => DoMinify(jsmin, inputFile));
         }
 
-        public void AssertFileMatch(FileInfo inputFile, FileInfo expectedFile)
+        public void AssertFileMatch(FileInfo inputFile, FileInfo expectedFile, bool replaceLineBreaks = false)
         {
-            var jsmin = new JsMin();
-            var input = DoMinify(jsmin, inputFile);
+            var jsmin = _minifier();
+            var input = DoMinify(jsmin, inputFile);            
             var expected = File.ReadAllText(expectedFile.FullName, Encoding.UTF8);
+            if (replaceLineBreaks)
+            {
+                expected = expected.Replace("\r\n", "\n");
+            }
 
             _output.WriteLine("Expected: " + expected);
 
             Assert.Equal(expected, input);
         }
 
-        public string DoMinify(JsMin minifier, string input)
+        public string DoMinify(IMinifier minifier, string input)
         {
             using (var reader = new StringReader(input))
             {
@@ -43,7 +50,7 @@ namespace JsMinSharp.Tests
             }
         }
 
-        public string DoMinify(JsMin minifier, FileInfo input)
+        public string DoMinify(IMinifier minifier, FileInfo input)
         {
             using (var reader = File.OpenText(input.FullName))
             {

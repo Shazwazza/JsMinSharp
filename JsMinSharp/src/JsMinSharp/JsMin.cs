@@ -44,7 +44,7 @@ SOFTWARE.
 
 namespace JsMinSharp
 {
-    public class JsMin
+    public class JsMin : IMinifier
     {
         private const int Eof = -1;
         private TextReader _sr;
@@ -173,7 +173,7 @@ namespace JsMinSharp
         ///      3   Get the next B. (Delete B).
         /// </summary>
         /// <param name="d"></param>
-        void Action(int d)
+        private void Action(int d)
         {
             switch (d)
             {

@@ -4,8 +4,6 @@ using Xunit.Abstractions;
 
 namespace JsMinSharp.Tests
 {
-    
-
     public class Literals
     {
         private readonly TestHelper _helper;
@@ -13,7 +11,7 @@ namespace JsMinSharp.Tests
         public Literals(ITestOutputHelper output)
         {
             _helper = new TestHelper(output);
-        }        
+        }
 
         [Fact]
         public void ArrayLiteral()
