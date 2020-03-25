@@ -60,7 +60,18 @@ namespace JsMinSharp.Tests
             }
         }
 
-        public static string TestDataFolder => 
-            Path.Combine(Environment.CurrentDirectory, "TestData");
+        public static string TestDataFolder
+        {
+            get
+            {   
+                var dir = new DirectoryInfo(Environment.CurrentDirectory);
+                while (!dir.Name.Equals("JsMinSharp.Tests", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    dir = dir.Parent;
+                }
+
+                return Path.Combine(dir.FullName, "TestData");
+            }
+        }
     }
 }
